@@ -1,0 +1,9 @@
+.DS_Store
+
+.gradio/
+
+outputs/
+gradio_tmp/
+__pycache__/
+
+checkpoints/
