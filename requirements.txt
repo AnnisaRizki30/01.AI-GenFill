@@ -1,5 +1,6 @@
 einops==0.7.0
-gradio==3.47.1
+gradio==4.42.0 
+gradio-imageslider 
 numpy==1.24.1
 omegaconf==2.3.0
 open-clip-torch==2.23.0
@@ -14,4 +15,7 @@ torch==2.1.1
 torchvision==0.16.1
 tqdm==4.66.1
 transformers==4.28.0
+accelerate 
+diffusers 
+fastapi==0.112.4
 xformers==0.0.23
