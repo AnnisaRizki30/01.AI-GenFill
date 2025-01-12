@@ -57,7 +57,7 @@ def pre_download_inpainting_models():
             raise Exception('download_url definition type is not supported')
 
 
-def load_inpainting_model(model_id, dtype=torch.float16, device='cuda:0', cache=False):
+def load_inpainting_model(model_id, dtype=torch.float16, device='cuda', cache=False):
     if cache and model_id in model_cache:
         return model_cache[model_id]
     else:
