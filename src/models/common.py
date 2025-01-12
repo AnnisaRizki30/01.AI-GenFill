@@ -80,7 +80,7 @@ def load_sd_inpainting_model(
     sd_version,
     diffusers_ckpt=False,
     dtype=torch.float16,
-    device='cuda:0'
+    device='cuda'
 ):
     if type(download_url) == str and type(model_path) == str:
         model_path = f'{MODEL_FOLDER}/{model_path}'
