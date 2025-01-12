@@ -35,10 +35,10 @@ inpainting_models = OrderedDict([
     ("Stable-Inpainting 2.0", 'sd2_inp'),
     ("Stable-Inpainting 1.5", 'sd15_inp')
 ])
-sr_model = models.sd2_sr.load_model(device='cuda:1')
-sam_predictor = models.sam.load_model(device='cuda:0')
+sr_model = models.sd2_sr.load_model(device='cuda')
+sam_predictor = models.sam.load_model(device='cuda')
 
-inp_model = models.load_inpainting_model("Stable-Inpainting 2.0", device='cuda:0', cache=True)
+inp_model = models.load_inpainting_model("Stable-Inpainting 2.0", device='cuda', cache=True)
 
 use_painta = True  # Set default value for use_painta
 use_rasg = True  # Set default value for use_rasg
@@ -51,7 +51,7 @@ def set_model_from_name(new_inp_model_name):
     if new_inp_model_name != inp_model_name:
         print (f"Activating Inpaintng Model: {new_inp_model_name}")
         inp_model = models.load_inpainting_model(
-            inpainting_models[new_inp_model_name], device='cuda:0', cache=True)
+            inpainting_models[new_inp_model_name], device='cuda', cache=True)
         inp_model_name = new_inp_model_name
 
 
