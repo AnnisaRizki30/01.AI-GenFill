@@ -9,7 +9,7 @@ DOWNLOAD_URL = 'https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939
 # download_file(DOWNLOAD_URL, MODEL_PATH)
 
 
-def load_model(device='cuda:0'):
+def load_model(device='cuda'):
     download_file(DOWNLOAD_URL, MODEL_PATH)
     sam = sam_model_registry["vit_h"](checkpoint=MODEL_PATH)
     sam.to(device=device)
