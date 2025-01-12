@@ -153,7 +153,7 @@ def load_obj(path):
     return get_obj_from_str(objyaml['__class__'])(**objyaml.get("__init__", {}))
     
 
-def load_model(dtype=torch.bfloat16, device='cuda:0'):
+def load_model(dtype=torch.bfloat16, device='cuda'):
     download_file(DOWNLOAD_URL, MODEL_PATH)
 
     state_dict = safetensors.torch.load_file(MODEL_PATH)
