@@ -28,6 +28,7 @@ def inpainting_run(use_rasg, use_painta, prompt, imageMask,
     guidance_scale=7.5, batch_size=1
 ):
     torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
 
     method = ['default']
     if use_painta: method.append('painta')
