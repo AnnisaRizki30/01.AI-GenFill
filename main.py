@@ -8,10 +8,10 @@ import warnings
 warnings.simplefilter("ignore", category=FutureWarning)
 warnings.simplefilter("ignore", category=UserWarning)
 warnings.simplefilter("ignore", category=SyntaxWarning)
+from torch.cuda.amp import autocast  
 
 negative_prompt_str = "text, bad anatomy, bad proportions, blurry, cropped, deformed, disfigured, duplicate, error, extra limbs, gross proportions, jpeg artifacts, long neck, low quality, lowres, malformed, morbid, mutated, mutilated, out of frame, ugly, worst quality"
 positive_prompt_str = "Full HD, high quality, high resolution"
-
 
 models.pre_download_inpainting_models()
 
@@ -48,22 +48,24 @@ def inpainting_run(use_rasg, use_painta, prompt, imageMask,
 
     inpainted_images = []
     blended_images = []
+    
     for i in range(batch_size):
         seed = seed + i * 1000
 
-        inpainted_image = inpainting_f(
-            ddim=inp_model,
-            method=method,
-            prompt=prompt,
-            image=image,
-            mask=mask,
-            seed=seed,
-            eta=eta,
-            negative_prompt=negative_prompt,
-            positive_prompt=positive_prompt,
-            num_steps=ddim_steps,
-            guidance_scale=guidance_scale
-        ).crop(image.size)
+        with autocast():
+            inpainted_image = inpainting_f(
+                ddim=inp_model,
+                method=method,
+                prompt=prompt,
+                image=image,
+                mask=mask,
+                seed=seed,
+                eta=eta,
+                negative_prompt=negative_prompt,
+                positive_prompt=positive_prompt,
+                num_steps=ddim_steps,
+                guidance_scale=guidance_scale
+            ).crop(image.size)
 
         blended_image = poisson_blend(
             orig_img=image.data[0],
@@ -75,7 +77,6 @@ def inpainting_run(use_rasg, use_painta, prompt, imageMask,
         inpainted_images.append(inpainted_image.pil())
     
     return blended_images
-
 
 
 def inference_gen_fill(prompt, image_mask):
