@@ -157,7 +157,13 @@ class IImage:
         return IImage(self.data[..., -1, None])
 
     def rgb(self):
-        return IImage(self.pil().convert('RGB'))
+        pil_images = self.pil()
+        if isinstance(pil_images, list):
+            # If pil() returns a list, convert each image in the list
+            return IImage([image.convert('RGB') for image in pil_images])
+    else:
+        # If it's a single PIL Image, convert it directly
+        return IImage(pil_images.convert('RGB'))
 
     def dilate(self, iterations=1, *args, **kwargs):
         return IImage((binary_dilation(self.data, iterations=iterations, *args, *kwargs)*255.).astype(np.uint8))
