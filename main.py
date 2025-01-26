@@ -2,6 +2,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 import torch
+import numpy as np
 from PIL import Image
 from collections import OrderedDict
 from object_replacer.src import models
