@@ -47,7 +47,7 @@ def inpainting_run(use_rasg, use_painta, prompt, imageMask,
     batch_size = max(1, min(int(batch_size), 4))
 
     image = IImage(hr_image).resize(512)
-    mask = IImage(imageMask['mask']).rgb().resize(512)
+    mask = IImage(imageMask['mask_file']).rgb().resize(512)
 
     inpainted_images = []
     blended_images = []
@@ -84,8 +84,8 @@ def inpainting_run(use_rasg, use_painta, prompt, imageMask,
 
 def inference_gen_fill(prompt, image_mask):
     try:
-        input_image = IImage(image_mask["image"]).resize(512)
-        input_mask = IImage(image_mask["mask"]).resize(512).rgb()
+        input_image = IImage(image_mask["image_file"]).resize(512)
+        input_mask = IImage(image_mask["mask_file"]).resize(512).rgb()
 
         output_images = inpainting_run(
             use_rasg=True,
