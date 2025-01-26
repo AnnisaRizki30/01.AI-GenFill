@@ -97,9 +97,6 @@ def inference_gen_fill(prompt, image_mask):
             positive_prompt=positive_prompt_str,
         )
 
-        if isinstance(output_images[0], Image.Image):
-            return output_images[0]
-        else:
-            return "Error: Inpainting did not return a valid image."
+        return output_images[0]
     except Exception as e:
         return f"Error: {str(e)}"
