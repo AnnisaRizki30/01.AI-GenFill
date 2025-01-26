@@ -93,6 +93,9 @@ class IImage:
     def __init__(self, x, vmin=-1, vmax=1):
         if isinstance(x, PIL.Image.Image):
             self.data = np.array(x)
+            if self.data.ndim == 3 and self.data.shape[-1] == 4:
+                # Remove alpha channel if present
+                self.data = self.data[..., :3]
             if self.data.ndim == 2:
                 self.data = self.data[..., None]  # (H,W,C)
             self.data = self.data[None]  # (B,H,W,C)
@@ -109,6 +112,7 @@ class IImage:
         elif isinstance(x, torch.Tensor):
             self.data = torch2np(x, vmin, vmax)
         self.device = 'cpu'
+
 
     def resize(self, size, *args, **kwargs):
         if size is None:
