@@ -53,11 +53,15 @@ class IImage:
     def numpy(self): return self.data
 
     def torch(self, vmin=-1, vmax=1):
-        if self.data.ndim == 3:
-            data = self.data.transpose(2, 0, 1) / 255.
+        print(self.data.shape)  # Check the shape of self.data
+        if self.data.ndim == 3:  # Case for single image (H, W, C)
+            self.data = self.data[None]  # Add batch dimension
+        if self.data.ndim == 4:
+            data = self.data.transpose(0, 3, 1, 2) / 255.  # (B, H, W, C) to (B, C, H, W)
         else:
-            data = self.data.transpose(0, 3, 1, 2) / 255.
+            raise ValueError("Unsupported number of dimensions: {}".format(self.data.ndim))
         return vmin + torch.from_numpy(data).float().to(self.device) * (vmax - vmin)
+
 
     def to(self, device):
         self.device = device
