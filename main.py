@@ -46,11 +46,15 @@ def inpainting_run(use_rasg, use_painta, prompt, imageMask,
     seed = int(seed)
     batch_size = max(1, min(int(batch_size), 4))
 
-    # Konversi hr_image menjadi IImage dengan validasi format
+    # Mengonversi hr_image menjadi IImage dengan validasi format
     image = IImage(hr_image).resize(512)
 
-    # Memastikan bahwa mask adalah dalam format PIL Image atau numpy array
-    mask_img = Image.open(imageMask['mask'])  # Pastikan ini adalah objek PIL Image
+    # Jika imageMask['mask'] adalah array numpy, kita langsung mengonversinya ke gambar PIL
+    if isinstance(imageMask['mask'], np.ndarray):
+        mask_img = Image.fromarray(imageMask['mask'])  # Konversi numpy array ke PIL Image
+    else:
+        mask_img = Image.open(imageMask['mask'])  # Jika bukan array, buka sebagai file
+
     mask = IImage(np.array(mask_img)).rgb().resize(512)  # Mengonversi PIL Image menjadi numpy array dan membuat IImage
 
     inpainted_images = []
