@@ -14,92 +14,78 @@ warnings.simplefilter("ignore", category=UserWarning)
 warnings.simplefilter("ignore", category=SyntaxWarning)
 from torch.cuda.amp import autocast  
 
-negative_prompt_str = "text, bad anatomy, bad proportions, blurry, cropped, deformed, disfigured, duplicate, error, extra limbs, gross proportions, jpeg artifacts, long neck, low quality, lowres, malformed, morbid, mutated, mutilated, out of frame, ugly, worst quality"
-positive_prompt_str = "Full HD, high quality, high resolution"
-
-models.pre_download_inpainting_models()
-
-inpainting_models = OrderedDict([
-    ("Dreamshaper Inpainting V8", 'ds8_inp'),
-    ("Stable-Inpainting 2.0", 'sd2_inp'),
-    ("Stable-Inpainting 1.5", 'sd15_inp')
-])
-inp_model = models.load_inpainting_model('sd2_inp', device='cuda', cache=True)
-
-
-def inpainting_run(use_rasg, use_painta, prompt, imageMask,
-                   hr_image, negative_prompt, positive_prompt, seed=49123, eta=0.1, ddim_steps=50,
-                   guidance_scale=7.5, batch_size=1):
-    torch.cuda.empty_cache()
-    torch.cuda.ipc_collect()
-
-    method = ['default']
-    if use_painta: method.append('painta')
-    if use_rasg: method.append('rasg')
-    method = '-'.join(method)
-
-    if use_rasg:
-        inpainting_f = rasg.run
+def get_inpainting_function(
+    model_id: str,
+    method: str,
+    negative_prompt: str = '',
+    positive_prompt: str = '',
+    num_steps: int = 50,
+    eta: float = 0.25,
+    guidance_scale: float = 7.5
+):
+    inp_model = models.load_inpainting_model(model_id, device='cuda:0', cache=True)
+    
+    if 'rasg' in method:
+        runner = rasg
     else:
-        inpainting_f = sd.run
-
-    seed = int(seed)
-    batch_size = max(1, min(int(batch_size), 4))
-
-    image = IImage(hr_image).resize(512)
-    mask = IImage(imageMask['mask']).rgb().resize(512)
-
-    inpainted_images = []
-    blended_images = []
+        runner = sd
     
-    for i in range(batch_size):
-        seed = seed + i * 1000
+    def run(image: Image, mask: Image, prompt: str, seed: int = 1) -> Image:
+        # Inference Mode
+        with torch.inference_mode():
+            # Autocast for mixed precision
+            with autocast():
+                inpainted_image = runner.run(
+                    ddim=inp_model,
+                    method=method,
+                    prompt=prompt,
+                    image=IImage(image),
+                    mask=IImage(mask),
+                    seed=seed,
+                    eta=eta,
+                    negative_prompt=negative_prompt,
+                    positive_prompt=positive_prompt,
+                    num_steps=num_steps,
+                    guidance_scale=guidance_scale
+                ).pil()
 
-        with autocast():
-            inpainted_image = inpainting_f(
-                ddim=inp_model,
-                method=method,
-                prompt=prompt,
-                image=image,
-                mask=mask,
-                seed=seed,
-                eta=eta,
-                negative_prompt=negative_prompt,
-                positive_prompt=positive_prompt,
-                num_steps=ddim_steps,
-                guidance_scale=guidance_scale
-            )
-
-        # Poisson blending on the image
-        blended_image = poisson_blend(
-            orig_img=np.array(image),
-            fake_img=np.array(inpainted_image),
-            mask=np.array(mask),
-            dilation=12
-        )
-        blended_images.append(blended_image)
-        inpainted_images.append(inpainted_image)
-    
-    return blended_images
+        # Resize the inpainted image to match the original size
+        w, h = image.size
+        inpainted_image = Image.fromarray(np.array(inpainted_image)[:h, :w])
+        return inpainted_image
+    return run
 
 
-def inference_gen_fill(prompt, image_mask):
-    try:
-        input_image = IImage(image_mask["image_file"]).resize((512, 512))
-        input_mask = IImage(image_mask["mask_file"]).resize((512, 512)).rgb()
+def get_inpainting_sr_function(
+    positive_prompt='high resolution professional photo',
+    negative_prompt='',
+    noise_level=20,
+    use_sam_mask=False,
+    blend_trick=True,
+    blend_output=True
+):
+    sr_model = models.sd2_sr.load_model(device='cuda:0')
+    sam_predictor = None
+    if use_sam_mask:
+        sam_predictor = models.sam.load_model(device='cuda:0')
 
-        # Run the inpainting function
-        output_images = inpainting_run(
-            use_rasg=True,
-            use_painta=True,
-            prompt=prompt,
-            imageMask={"mask": input_mask.numpy()},
-            hr_image=np.array(input_image),
-            negative_prompt=negative_prompt_str,
-            positive_prompt=positive_prompt_str,
-        )
-
-        return output_images[0]
-    except Exception as e:
-        print("Error traceback:", traceback.format_exc())
-        return f"Error: {str(e)}"
+    def run(inpainted_image: Image, image: Image, mask: Image, prompt: str, seed: int = 1) -> Image:
+        # Inference Mode
+        with torch.inference_mode():
+            # Autocast for mixed precision
+            with autocast():
+                return sr.run(
+                    sr_model,
+                    sam_predictor,
+                    inpainted_image,
+                    image,
+                    mask,
+                    prompt=f'{prompt}, {positive_prompt}',
+                    noise_level=noise_level,
+                    blend_trick=blend_trick,
+                    blend_output=blend_output,
+                    negative_prompt=negative_prompt, 
+                    seed=seed,
+                    use_sam_mask=use_sam_mask
+                )
+    return run
