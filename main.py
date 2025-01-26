@@ -91,7 +91,7 @@ def inference_gen_fill(prompt, image_mask):
             use_rasg=True,
             use_painta=True,
             prompt=prompt,
-            imageMask={"mask": input_mask.numpy()},
+            imageMask={"mask_file": input_mask.numpy()},
             hr_image=input_image.numpy(),
             negative_prompt=negative_prompt_str,
             positive_prompt=positive_prompt_str,
