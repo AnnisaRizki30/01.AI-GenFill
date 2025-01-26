@@ -82,25 +82,21 @@ def inpainting_run(use_rasg, use_painta, prompt, imageMask,
     return blended_images
 
 
-def inference_gen_fill(prompt, image, mask):
+def inference_gen_fill(prompt, image_mask):
     try:
-        # Resize images for processing
-        hr_image = image.resize((512, 512)) 
-        
-        # Run inference
+        input_image = IImage(image_mask["image"]).resize(512)
+        input_mask = IImage(image_mask["mask"]).resize(512).rgb()
+
         output_images = inpainting_run(
             use_rasg=True,
             use_painta=True,
             prompt=prompt,
-            imageMask={"mask": mask.resize((512, 512)).convert("RGB")}, 
-            hr_image=hr_image,
+            imageMask={"mask": input_mask.numpy()},
+            hr_image=input_image.numpy(),
             negative_prompt=negative_prompt_str,
             positive_prompt=positive_prompt_str,
         )
 
-        if output_images:
-            result_image = output_images[0]
-
-        return result_image
+        return output_images[0]
     except Exception as e:
         return f"Error: {str(e)}"
