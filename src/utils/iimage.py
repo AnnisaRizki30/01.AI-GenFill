@@ -72,15 +72,20 @@ class IImage:
         return self
 
     def pil(self):
+        # Jika hanya ada satu gambar dalam self.data, kembalikan langsung sebagai PIL.Image.Image
+        if self.data.ndim == 3:
+            return PIL.Image.fromarray(self.data)
+        
         ans = []
         for x in self.data:
             if x.shape[-1] == 1:
                 x = x[..., 0]
-
             ans.append(PIL.Image.fromarray(x))
+        
         if len(ans) == 1:
             return ans[0]
         return ans
+
 
     def is_iimage(self):
         return True
@@ -156,14 +161,8 @@ class IImage:
     def alpha(self):
         return IImage(self.data[..., -1, None])
 
-    def rgb(self):
-        pil_images = self.pil()
-        if isinstance(pil_images, list):
-            # If pil() returns a list, convert each image in the list
-            return IImage([image.convert('RGB') for image in pil_images])
-        else:
-            # If it's a single PIL Image, convert it directly
-            return IImage(pil_images.convert('RGB'))
+     def rgb(self):
+        return IImage(self.pil().convert('RGB'))
 
     def dilate(self, iterations=1, *args, **kwargs):
         return IImage((binary_dilation(self.data, iterations=iterations, *args, *kwargs)*255.).astype(np.uint8))
