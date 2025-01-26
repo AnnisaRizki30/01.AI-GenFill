@@ -99,4 +99,5 @@ def inference_gen_fill(prompt, image_mask):
 
         return output_images[0]
     except Exception as e:
+        print("Error traceback:", traceback.format_exc())
         return f"Error: {str(e)}"
