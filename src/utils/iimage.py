@@ -161,8 +161,8 @@ class IImage:
     def alpha(self):
         return IImage(self.data[..., -1, None])
 
-     def rgb(self):
-         return IImage(self.pil().convert('RGB'))
+    def rgb(self):
+        return IImage(self.pil().convert('RGB'))
 
     def dilate(self, iterations=1, *args, **kwargs):
         return IImage((binary_dilation(self.data, iterations=iterations, *args, *kwargs)*255.).astype(np.uint8))
