@@ -28,9 +28,8 @@ inp_model = models.load_inpainting_model('sd2_inp', device='cuda', cache=True)
 
 
 def inpainting_run(use_rasg, use_painta, prompt, imageMask,
-    hr_image, negative_prompt, positive_prompt, seed=49123, eta=0.1, ddim_steps=50,
-    guidance_scale=7.5, batch_size=1
-):
+                   hr_image, negative_prompt, positive_prompt, seed=49123, eta=0.1, ddim_steps=50,
+                   guidance_scale=7.5, batch_size=1):
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
 
@@ -47,16 +46,16 @@ def inpainting_run(use_rasg, use_painta, prompt, imageMask,
     seed = int(seed)
     batch_size = max(1, min(int(batch_size), 4))
 
-    # Mengonversi hr_image menjadi IImage dengan validasi format
-    image = IImage(hr_image).resize(512)
+    # Convert hr_image to PIL image
+    image = Image.fromarray(hr_image).resize((512, 512))
 
-    # Jika imageMask['mask'] adalah array numpy, kita langsung mengonversinya ke gambar PIL
+    # If the mask is a numpy array, convert it to a PIL Image
     if isinstance(imageMask['mask'], np.ndarray):
-        mask_img = Image.fromarray(imageMask['mask'])  # Konversi numpy array ke PIL Image
+        mask_img = Image.fromarray(imageMask['mask'])
     else:
-        mask_img = Image.open(imageMask['mask'])  # Jika bukan array, buka sebagai file
+        mask_img = Image.open(imageMask['mask'])
 
-    mask = IImage(np.array(mask_img)).rgb().resize(512)  # Mengonversi PIL Image menjadi numpy array dan membuat IImage
+    mask = mask_img.resize((512, 512))  # Resize mask image to 512x512
 
     inpainted_images = []
     blended_images = []
@@ -77,31 +76,36 @@ def inpainting_run(use_rasg, use_painta, prompt, imageMask,
                 positive_prompt=positive_prompt,
                 num_steps=ddim_steps,
                 guidance_scale=guidance_scale
-            ).crop(image.size)
+            )
 
+        # Poisson blending on the image
         blended_image = poisson_blend(
-            orig_img=image.data[0],
-            fake_img=inpainted_image.data[0],
-            mask=mask.data[0],
+            orig_img=np.array(image),
+            fake_img=np.array(inpainted_image),
+            mask=np.array(mask),
             dilation=12
         )
         blended_images.append(blended_image)
-        inpainted_images.append(inpainted_image.pil())
+        inpainted_images.append(inpainted_image)
     
     return blended_images
 
 
 def inference_gen_fill(prompt, image_mask):
     try:
-        input_image = IImage(image_mask["image_file"]).resize(512)
-        input_mask = IImage(image_mask["mask_file"]).resize(512).rgb()
+        input_image = Image.open(image_mask["image_file"]).resize((512, 512))
+        input_mask = Image.open(image_mask["mask_file"]).resize((512, 512))
 
+        # Convert mask image to RGB (if it's grayscale)
+        input_mask = input_mask.convert('RGB')
+
+        # Run the inpainting function
         output_images = inpainting_run(
             use_rasg=True,
             use_painta=True,
             prompt=prompt,
-            imageMask={"mask_file": input_mask.numpy()},
-            hr_image=input_image.numpy(),
+            imageMask={"mask": np.array(input_mask)},
+            hr_image=np.array(input_image),
             negative_prompt=negative_prompt_str,
             positive_prompt=positive_prompt_str,
         )
