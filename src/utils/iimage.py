@@ -93,24 +93,17 @@ class IImage:
     def __init__(self, x, vmin=-1, vmax=1):
         if isinstance(x, PIL.Image.Image):
             self.data = np.array(x)
-            if self.data.ndim == 3 and self.data.shape[-1] == 4:
-                # Remove alpha channel if present
-                self.data = self.data[..., :3]
-            if self.data.ndim == 2:
-                self.data = self.data[..., None]  # (H,W,C)
-            self.data = self.data[None]  # (B,H,W,C)
         elif isinstance(x, IImage):
             self.data = x.data.copy()  # Simple Copy
         elif isinstance(x, np.ndarray):
             self.data = x.copy().astype(np.uint8)
-            if self.data.ndim == 2:
-                self.data = self.data[None, ..., None]
-            if self.data.ndim == 3:
-                warnings.warn(
-                    "Inferred dimensions for a 3D array as (H,W,C), but could've been (B,H,W)")
-                self.data = self.data[None]
         elif isinstance(x, torch.Tensor):
             self.data = torch2np(x, vmin, vmax)
+        elif isinstance(x, io.BytesIO):  # Check for file-like objects
+            img = PIL.Image.open(x)
+            self.data = np.array(img)
+        else:
+            raise ValueError("Unsupported input type.")
         self.device = 'cpu'
 
 
