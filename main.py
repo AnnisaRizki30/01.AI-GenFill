@@ -43,6 +43,10 @@ def resize_image(image, size, use_small_edge_when_int=False, filter=PIL.Image.BI
 
 
 def add_channel_and_batch_size(mask):
+    # Convert PIL image to numpy array
+    if isinstance(mask, Image.Image):
+        mask = np.array(mask)
+
     if mask.ndim == 2:
         # Menambahkan dimensi batch size dan channel
         mask = mask[None, None, :, :]  # Menjadi (1, 1, H, W)
@@ -55,7 +59,6 @@ def add_channel_and_batch_size(mask):
     else:
         raise ValueError(f"Unsupported number of dimensions: {mask.ndim}")
     return mask
-
 
 
 def get_inpainting_function(
