@@ -24,7 +24,7 @@ inpainting_models = OrderedDict([
     ("Stable-Inpainting 2.0", 'sd2_inp'),
     #("Stable-Inpainting 1.5", 'sd15_inp')
 ])
-sr_model = models.sd2_sr.load_model(device='cuda:1')
+#sr_model = models.sd2_sr.load_model(device='cuda:1')
 sam_predictor = models.sam.load_model(device='cuda:0')
 
 inp_model_name = list(inpainting_models.keys())[0]
