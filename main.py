@@ -16,32 +16,6 @@ warnings.simplefilter("ignore", category=SyntaxWarning)
 from torch.cuda.amp import autocast  
 
 
-def resize_image(image, size, use_small_edge_when_int=False, filter=PIL.Image.BICUBIC):
-    if isinstance(image, np.ndarray):
-        h, w = image.shape[:2]
-    elif isinstance(image, PIL.Image.Image):
-        h, w = image.size
-    else:
-        raise ValueError("Input image must be a numpy array or a PIL Image.")
-
-    if isinstance(size, int):
-        aspect_ratio = h / w
-        if use_small_edge_when_int:
-            size = (max(size, int(size * aspect_ratio)),
-                    max(size, int(size / aspect_ratio)))
-        else:
-            size = (min(size, int(size * aspect_ratio)),
-                    min(size, int(size / aspect_ratio)))
-
-    if isinstance(image, np.ndarray):
-        pil_image = PIL.Image.fromarray(image)
-    else:
-        pil_image = image
-
-    resized_image = pil_image.resize(size[::-1], filter)
-    return np.array(resized_image)
-
-
 def add_channel_and_batch_size(mask):
     # Convert PIL image to numpy array
     if isinstance(mask, Image.Image):
@@ -58,7 +32,14 @@ def add_channel_and_batch_size(mask):
         pass
     else:
         raise ValueError(f"Unsupported number of dimensions: {mask.ndim}")
+
     return mask
+
+
+def resize_image(image, size):
+    pil_image = Image.fromarray(image)
+    resized_image = pil_image.resize((size, size))
+    return np.array(resized_image)
 
 
 def get_inpainting_function(
