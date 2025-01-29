@@ -145,9 +145,9 @@ def inpainting_run(model_name, use_rasg, use_painta, prompt, imageMask,
     method = '-'.join(method)
 
     if use_rasg:
-        inpainting_f = rasg_run
+        inpainting_f = rasg.run
     else:
-        inpainting_f = sd_run
+        inpainting_f = sd.run
 
     seed = int(seed)
     batch_size = max(1, min(int(batch_size), 4))
