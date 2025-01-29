@@ -17,7 +17,6 @@ from torch.cuda.amp import autocast
 
 
 def add_channel_and_batch_size(mask):
-    # Convert PIL image to numpy array
     if isinstance(mask, Image.Image):
         mask = np.array(mask)
 
@@ -32,7 +31,6 @@ def add_channel_and_batch_size(mask):
         pass
     else:
         raise ValueError(f"Unsupported number of dimensions: {mask.ndim}")
-
     return mask
 
 
@@ -117,3 +115,56 @@ def get_inpainting_sr_function(
                     use_sam_mask=use_sam_mask
                 )
     return run
+
+
+
+def inpainting_run(model_name, use_rasg, use_painta, prompt, imageMask,
+                   hr_image, seed, eta, negative_prompt, positive_prompt, ddim_steps,
+                   guidance_scale=7.5, batch_size=1):
+    torch.cuda.empty_cache()
+    set_model_from_name(model_name)
+
+    method = ['default']
+    if use_painta: method.append('painta')
+    if use_rasg: method.append('rasg')
+    method = '-'.join(method)
+
+    if use_rasg:
+        inpainting_f = rasg_run
+    else:
+        inpainting_f = sd_run
+
+    seed = int(seed)
+    batch_size = max(1, min(int(batch_size), 4))
+
+    image = IImage(hr_image).resize(512)
+    mask = IImage(imageMask['mask']).rgb().resize(512)
+
+    inpainted_images = []
+    blended_images = []
+    with torch.inference_mode():
+        for i in range(batch_size):
+            seed = seed + i * 1000
+            with autocast():
+                inpainted_image = inpainting_f(
+                    ddim='sd2_inp',
+                    method=method,
+                    prompt=prompt,
+                    image=image,
+                    mask=mask,
+                    seed=seed,
+                    eta=eta,
+                    negative_prompt=negative_prompt,
+                    positive_prompt=positive_prompt,
+                    num_steps=ddim_steps,
+                    guidance_scale=guidance_scale
+                ).crop(image.size)
+            blended_image = poisson_blend(
+                orig_img=image.data[0],
+                fake_img=inpainted_image.data[0],
+                mask=mask.data[0],
+                dilation=12
+            )
+            blended_images.append(blended_image)
+            inpainted_images.append(inpainted_image.pil())
+    return blended_images
