@@ -166,6 +166,8 @@ class IImage:
         return IImage(self.data[..., -1, None])
 
     def rgb(self):
+        if self.data.shape[-1] == 4:  # If image has an alpha channel
+            self.data = self.data[..., :3]  # Remove the alpha channel
         return IImage(self.pil().convert('RGB'))
 
     def dilate(self, iterations=1, *args, **kwargs):
