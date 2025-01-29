@@ -14,6 +14,24 @@ warnings.simplefilter("ignore", category=UserWarning)
 warnings.simplefilter("ignore", category=SyntaxWarning)
 from torch.cuda.amp import autocast  
 
+
+def resize_image(image: Image, size, use_small_edge_when_int=False, resample=Image.BICUBIC):    
+    if size is None:
+        return image
+
+    if isinstance(size, int):  
+        width, height = image.size
+        if use_small_edge_when_int:
+            aspect_ratio = height / width
+            size = (max(size, int(size * aspect_ratio)), max(size, int(size / aspect_ratio)))
+        else:
+            aspect_ratio = height / width
+            size = (min(size, int(size * aspect_ratio)), min(size, int(size / aspect_ratio)))
+
+    resized_image = image.resize(size, resample=resample)    
+    return resized_image
+
+
 def get_inpainting_function(
     model_id: str,
     method: str,
