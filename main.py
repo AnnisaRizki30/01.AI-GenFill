@@ -17,8 +17,14 @@ from torch.cuda.amp import autocast
 
 
 def resize_image(image, size, use_small_edge_when_int=False, filter=PIL.Image.BICUBIC):
-    if isinstance(size, int):
+    if isinstance(image, np.ndarray):
         h, w = image.shape[:2]
+    elif isinstance(image, PIL.Image.Image):
+        h, w = image.size
+    else:
+        raise ValueError("Input image must be a numpy array or a PIL Image.")
+
+    if isinstance(size, int):
         aspect_ratio = h / w
         if use_small_edge_when_int:
             size = (max(size, int(size * aspect_ratio)),
@@ -28,7 +34,11 @@ def resize_image(image, size, use_small_edge_when_int=False, filter=PIL.Image.BI
                     min(size, int(size / aspect_ratio)))
 
     # Resize the image using PIL
-    pil_image = PIL.Image.fromarray(image)
+    if isinstance(image, np.ndarray):
+        pil_image = PIL.Image.fromarray(image)
+    else:
+        pil_image = image
+
     resized_image = pil_image.resize(size[::-1], filter)
     return np.array(resized_image)
 
