@@ -15,21 +15,21 @@ warnings.simplefilter("ignore", category=SyntaxWarning)
 from torch.cuda.amp import autocast  
 
 
-def resize_image(image: Image, size, use_small_edge_when_int=False, resample=Image.BICUBIC):    
-    if size is None:
-        return image
-
-    if isinstance(size, int):  
-        width, height = image.size
+def resize_image(image, size, use_small_edge_when_int=False, filter=PIL.Image.BICUBIC):
+    if isinstance(size, int):
+        h, w = image.shape[:2]
+        aspect_ratio = h / w
         if use_small_edge_when_int:
-            aspect_ratio = height / width
-            size = (max(size, int(size * aspect_ratio)), max(size, int(size / aspect_ratio)))
+            size = (max(size, int(size * aspect_ratio)),
+                    max(size, int(size / aspect_ratio)))
         else:
-            aspect_ratio = height / width
-            size = (min(size, int(size * aspect_ratio)), min(size, int(size / aspect_ratio)))
+            size = (min(size, int(size * aspect_ratio)),
+                    min(size, int(size / aspect_ratio)))
 
-    resized_image = image.resize(size, resample=resample)    
-    return resized_image
+    # Resize the image using PIL
+    pil_image = PIL.Image.fromarray(image)
+    resized_image = pil_image.resize(size[::-1], filter)
+    return np.array(resized_image)
 
 
 def get_inpainting_function(
