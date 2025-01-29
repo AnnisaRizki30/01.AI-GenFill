@@ -122,7 +122,7 @@ def inpainting_run(model_name, use_rasg, use_painta, prompt, imageMask,
                    hr_image, seed, eta, negative_prompt, positive_prompt, ddim_steps,
                    guidance_scale=7.5, batch_size=1):
     torch.cuda.empty_cache()
-    set_model_from_name(model_name)
+    # set_model_from_name(model_name)
 
     method = ['default']
     if use_painta: method.append('painta')
