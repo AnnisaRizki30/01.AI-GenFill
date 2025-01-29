@@ -15,6 +15,21 @@ warnings.simplefilter("ignore", category=UserWarning)
 warnings.simplefilter("ignore", category=SyntaxWarning)
 from torch.cuda.amp import autocast  
 
+negative_prompt_str = "text, bad anatomy, bad proportions, blurry, cropped, deformed, disfigured, duplicate, error, extra limbs, gross proportions, jpeg artifacts, long neck, low quality, lowres, malformed, morbid, mutated, mutilated, out of frame, ugly, worst quality"
+positive_prompt_str = "Full HD, 4K, high quality, high resolution"
+
+models.pre_download_inpainting_models()
+inpainting_models = OrderedDict([
+    #("Dreamshaper Inpainting V8", 'ds8_inp'),
+    ("Stable-Inpainting 2.0", 'sd2_inp'),
+    #("Stable-Inpainting 1.5", 'sd15_inp')
+])
+sr_model = models.sd2_sr.load_model(device='cuda:1')
+sam_predictor = models.sam.load_model(device='cuda:0')
+
+inp_model_name = list(inpainting_models.keys())[0]
+inp_model = models.load_inpainting_model(
+    inpainting_models[inp_model_name], device='cuda:0', cache=True)
 
 def add_channel_and_batch_size(mask):
     if isinstance(mask, Image.Image):
@@ -147,15 +162,15 @@ def inpainting_run(model_name, use_rasg, use_painta, prompt, imageMask,
             seed = seed + i * 1000
             with autocast():
                 inpainted_image = inpainting_f(
-                    ddim='sd2_inp',
+                    ddim=inp_model,
                     method=method,
                     prompt=prompt,
                     image=image,
                     mask=mask,
                     seed=seed,
                     eta=eta,
-                    negative_prompt=negative_prompt,
-                    positive_prompt=positive_prompt,
+                    negative_prompt=negative_prompt_str,
+                    positive_prompt=positive_prompt_str,
                     num_steps=ddim_steps,
                     guidance_scale=guidance_scale
                 ).crop(image.size)
